@@ -216,9 +216,16 @@ func (p *Pool) build() (*client, error) {
 		}
 		cl = c
 	}
+	fmt.Println("created smtp client")
 	c := &client{cl, 0}
 
-	if _, err := startTLS(c, p.tlsConfig); err != nil {
+	tlsConfig := p.tlsConfig
+	if tlsConfig == nil {
+		host, _, _ := net.SplitHostPort(p.addr)
+		tlsConfig = &tls.Config{ServerName: host}
+	}
+
+	if _, err := startTLS(c, tlsConfig); err != nil {
 		c.Close()
 		return nil, err
 	}
