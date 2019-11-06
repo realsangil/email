@@ -196,7 +196,13 @@ func addAuth(c *client, auth smtp.Auth) (bool, error) {
 }
 
 func (p *Pool) build() (*client, error) {
-	cl, err := smtp.Dial(p.addr)
+	conn, err := tls.Dial("tcp", p.addr, p.tlsConfig)
+	if err != nil {
+		return nil, err
+	}
+
+	hostname, _, _ := net.SplitHostPort(p.addr)
+	cl, err := smtp.NewClient(conn, hostname)
 	if err != nil {
 		return nil, err
 	}
