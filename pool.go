@@ -3,6 +3,7 @@ package email
 import (
 	"crypto/tls"
 	"errors"
+	"fmt"
 	"io"
 	"net"
 	"net/mail"
@@ -195,6 +196,7 @@ func addAuth(c *client, auth smtp.Auth) (bool, error) {
 func (p *Pool) build() (*client, error) {
 	var cl *smtp.Client
 	if p.tlsConfig != nil {
+		fmt.Println("tls config already exist")
 		conn, err := tls.Dial("tcp", p.addr, p.tlsConfig)
 		if err != nil {
 			return nil, err
@@ -207,6 +209,7 @@ func (p *Pool) build() (*client, error) {
 		}
 		cl = c
 	} else {
+		fmt.Println("tls config not exist")
 		c, err := smtp.Dial(p.addr)
 		if err != nil {
 			return nil, err
