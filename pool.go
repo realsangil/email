@@ -53,13 +53,10 @@ func NewPool(address string, count int, auth smtp.Auth, opt_tlsConfig ...*tls.Co
 		closing: make(chan struct{}),
 		mut:     &sync.Mutex{},
 	}
-	if len(opt_tlsConfig) == 1 {
+	if len(opt_tlsConfig) > 0 {
 		pool.tlsConfig = opt_tlsConfig[0]
-	} else if host, _, e := net.SplitHostPort(address); e != nil {
-		return nil, e
-	} else {
-		pool.tlsConfig = &tls.Config{ServerName: host}
 	}
+
 	return
 }
 
@@ -196,15 +193,25 @@ func addAuth(c *client, auth smtp.Auth) (bool, error) {
 }
 
 func (p *Pool) build() (*client, error) {
-	conn, err := tls.Dial("tcp", p.addr, p.tlsConfig)
-	if err != nil {
-		return nil, err
-	}
+	var cl *smtp.Client
+	if p.tlsConfig != nil {
+		conn, err := tls.Dial("tcp", p.addr, p.tlsConfig)
+		if err != nil {
+			return nil, err
+		}
 
-	hostname, _, _ := net.SplitHostPort(p.addr)
-	cl, err := smtp.NewClient(conn, hostname)
-	if err != nil {
-		return nil, err
+		hostname, _, _ := net.SplitHostPort(p.addr)
+		c, err := smtp.NewClient(conn, hostname)
+		if err != nil {
+			return nil, err
+		}
+		cl = c
+	} else {
+		c, err := smtp.Dial(p.addr)
+		if err != nil {
+			return nil, err
+		}
+		cl = c
 	}
 	c := &client{cl, 0}
 
